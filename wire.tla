@@ -20,7 +20,7 @@ process Wire \in 1..2
 begin
     CheckFunds:
         if amount <= acc[sender] then
-            Withdraw:
+\*            Withdraw:
                 acc[sender] := acc[sender] - amount;
             Deposit:
                 acc[receiver] := acc[receiver] + amount;
@@ -30,7 +30,7 @@ end process;
 end algorithm;
 
 *)
-\* BEGIN TRANSLATION (chksum(pcal) = "1ca341c5" /\ chksum(tla) = "2949d1bd")
+\* BEGIN TRANSLATION (chksum(pcal) = "8f7d63c5" /\ chksum(tla) = "a7e9e50b")
 VARIABLES people, acc, pc
 
 (* define statement *)
@@ -53,21 +53,18 @@ Init == (* Global variables *)
 
 CheckFunds(self) == /\ pc[self] = "CheckFunds"
                     /\ IF amount[self] <= acc[sender[self]]
-                          THEN /\ pc' = [pc EXCEPT ![self] = "Withdraw"]
+                          THEN /\ acc' = [acc EXCEPT ![sender[self]] = acc[sender[self]] - amount[self]]
+                               /\ pc' = [pc EXCEPT ![self] = "Deposit"]
                           ELSE /\ pc' = [pc EXCEPT ![self] = "Done"]
-                    /\ UNCHANGED << people, acc, sender, receiver, amount >>
-
-Withdraw(self) == /\ pc[self] = "Withdraw"
-                  /\ acc' = [acc EXCEPT ![sender[self]] = acc[sender[self]] - amount[self]]
-                  /\ pc' = [pc EXCEPT ![self] = "Deposit"]
-                  /\ UNCHANGED << people, sender, receiver, amount >>
+                               /\ acc' = acc
+                    /\ UNCHANGED << people, sender, receiver, amount >>
 
 Deposit(self) == /\ pc[self] = "Deposit"
                  /\ acc' = [acc EXCEPT ![receiver[self]] = acc[receiver[self]] + amount[self]]
                  /\ pc' = [pc EXCEPT ![self] = "Done"]
                  /\ UNCHANGED << people, sender, receiver, amount >>
 
-Wire(self) == CheckFunds(self) \/ Withdraw(self) \/ Deposit(self)
+Wire(self) == CheckFunds(self) \/ Deposit(self)
 
 (* Allow infinite stuttering to prevent deadlock on termination. *)
 Terminating == /\ \A self \in ProcSet: pc[self] = "Done"
@@ -84,5 +81,5 @@ Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Jun 12 14:36:43 BST 2021 by alf
+\* Last modified Sat Jun 12 15:15:00 BST 2021 by alf
 \* Created Sat Jun 12 13:43:37 BST 2021 by alf
